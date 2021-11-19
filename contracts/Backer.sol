@@ -88,6 +88,26 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
     }
     Job[] public toCancel;
 
+    event BackerTierCreated(
+        address indexed backee,
+        address lock
+    );
+
+    event BackerMemberJoined(
+        address indexed backee,
+        address lock,
+        address member,
+        int96 flowRate,
+        uint date
+    );
+
+    event BackerMemberCanceled(
+        address indexed backee,
+        address lock,
+        address member,
+        int96 flowRate,
+        uint date
+    );
 
     function initialize(
         address _backerToken,
@@ -151,6 +171,10 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
 
     }
 
+    function acceptedToken() external returns(address) {
+        return address(_acceptedToken);
+    }
+
     function createTier(int96 flowRate, address token, uint256 multiplier, string calldata name, string calldata metadata)
         external onlyRole(MANAGER)
         returns (Tier memory)
@@ -168,10 +192,11 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
         // TODO: config the lock: symbol, image, callbacks, etc. -- need Lock interface
         Tier memory tier = Tier(address(lock), flowRate, token, multiplier, name, metadata, true);
         tiers.push(tier);
+        emit BackerTierCreated(address(this), address(lock));
         return tier;
     }
 
-    function getAllTiers() external returns (Tier[] memory) {
+    function getAllTiers() public view returns (Tier[] memory) {
         return tiers;
     }
 
@@ -202,6 +227,21 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
         return tier;
     }
 
+    function getTierForLock(address lockAddr) public view returns (Tier memory) {
+        _getTierForLock(lockAddr);
+    }
+
+    function _getTierForLock(address lockAddr) internal view returns (Tier memory) {
+        Tier memory tier;
+        for (uint256 i = 0; i < tiers.length; i++) {
+            console.log("starting on tier with index ", i);
+            if ( lockAddr == tiers[i].lock ) {
+                tier = tiers[i];
+            }
+        }
+        return tier;
+    }
+
     function _grantKeys(address customer, ISuperToken _superToken, bytes32 _agreementId) internal {
         (,int96 inFlowRate,,) = _cfa.getFlowByID(_superToken, _agreementId);
         flowRates[customer] = inFlowRate;
@@ -218,13 +258,14 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
             _expirationTimestamps[0] = 2236879077;
             _keyManagers[0] = address(this);
             console.log("b4 grantKeys", _recipients[0], _expirationTimestamps[0], _keyManagers[0]);
-            bool isManager = lock.isLockManager(address(this));
-            bool isGranter = lock.isKeyGranter(address(this));
-            console.log("isLockManager", isManager);
-            console.log("isGranter", isGranter);
+            //bool isManager = lock.isLockManager(address(this));
+            //bool isGranter = lock.isKeyGranter(address(this));
+            //console.log("isLockManager", isManager);
+            //console.log("isGranter", isGranter);
             lock.grantKeys(_recipients, _expirationTimestamps, _keyManagers);
             console.log("after grantKeys");
-            console.log( "tokenId", lock.getTokenIdFor(customer) );
+            //console.log( "tokenId", lock.getTokenIdFor(customer) );
+            emit BackerMemberJoined(address(this), tier.lock, customer, inFlowRate, block.timestamp);
         } else {
             console.log("tier.lock is the zero address");
         }
@@ -376,6 +417,7 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
             Job memory job = Job(tier.lock, customer);
             toCancel.push(job);
         }
+        emit BackerMemberCanceled(address(this), tier.lock, customer, flowRates[customer], block.timestamp);
         return _updateOutflow(_ctx, customer, _agreementId);
     }
     function getNetFlow() public view returns (int96) {
