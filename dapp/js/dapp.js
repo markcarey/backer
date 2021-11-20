@@ -3,6 +3,7 @@ var web3 = AlchemyWeb3.createAlchemyWeb3("wss://"+rpcURL);
 //var web3 = AlchemyWeb3.createAlchemyWeb3("http://localhost:8545");
 var BN = web3.utils.BN;
 
+const ipfsURL = "https://api.nft.storage/upload";
 var showWizard = false;
 const factoryAddress = "0x537Ca60A7DCDe1054BB30166AF04d3921C9F7B89";
 var backeeAddress = "";
@@ -723,6 +724,19 @@ $( document ).ready(function() {
         var name = $("#" + prefix + "TierName").val();
         var multiplier = parseInt( $("#" + prefix + "Multiplier").val() ) * 100;
 
+
+        const meta = {
+            "test": "1 2 3",
+            "image": "https://image.com/file.jpg",
+            "hello": "gm"
+        };
+        const blob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+        const file = new File([ blob ], 'metadata.json');
+        const response = await fetch(ipfsURL, opts(file));
+        var result = await response.json();
+        console.log( result );
+        return false;
+
         var amount = $("#" + prefix + "Price").val();
         var seconds = $("#" + prefix + "FlowSeconds").val();
         var flowRate = parseInt( amount / seconds * ( 10**underlyingDecimals) );
@@ -1195,3 +1209,23 @@ function renderKnobs(){
         }
     });
 }
+
+function ipfsToHttp(ipfs) {
+    var http = "";
+    var cid = ipfs.replace("ipfs://", "");
+    http = "https://" + cid + ".ipfs.dweb.link";
+    return http;
+}
+
+function opts(file) {
+    var opts = { 
+        method: 'post', 
+        headers: new Headers({
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDU0NkZiYmNhOEIzZDIwMDAzZTA2ZjMzZmRBN0E0NzUxMGExRUY5OTgiLCJpc3MiOiJuZnQtc3RvcmFnZSIsImlhdCI6MTYyODYxMDE3NzQxNSwibmFtZSI6InNwcm91dCBtZXRhZGF0YSJ9.6YwPqstbUyRfNiGwEaYccfGZZYGmXOSuAuLzLduwdRM', 
+            'Content-Type': 'application/json'
+        }), 
+        body: file
+    };
+    return opts;
+}
+
