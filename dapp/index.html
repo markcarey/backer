@@ -13,7 +13,7 @@
     <!-- Google font-->
     <link href="https://fonts.googleapis.com/css?family=Rubik:400,400i,500,500i,700,700i&amp;display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,500,500i,700,700i,900&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css">
+    <!-- link rel="stylesheet" type="text/css" href="assets/css/font-awesome.css" -->
     <!-- ico-font-->
     <link rel="stylesheet" type="text/css" href="assets/css/vendors/icofont.css">
     <!-- Themify icon-->
@@ -41,7 +41,13 @@
       .dataTables_length {display: none;}
       .chart-days li {cursor: pointer;}
       .section:not(.chart_data_right) {margin-top: 20px;}
+      #social-links li {display: none;}
+      #notifications {display: none;}
+      .sidebar-main {display: none;}
+      .section {display: none;}
+      .chart_data_right.second {display: none !important;}
     </style>
+    <script src="https://kit.fontawesome.com/5fee49e050.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <div class="loader-wrapper">
@@ -82,7 +88,7 @@
           </div>
           <div class="nav-right col-8 pull-right right-header p-0">
             <ul class="nav-menus">
-              <li class="onhover-dropdown">
+              <li id="notifications" class="onhover-dropdown">
                 <div class="notification-box"><i data-feather="bell"> </i><span class="badge rounded-pill badge-secondary">1                                </span></div>
                 <ul class="notification-dropdown onhover-show-div">
                   <li><i data-feather="bell"></i>
@@ -145,6 +151,8 @@
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navFlows" href="#"><i data-feather="users"></i><span class="">Members</span></a>
                   </li>
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navTiers" href="#"><i data-feather="lock"></i><span class="">Tiers</span></a>
+                  </li>
+                  <li class="sidebar-list"><a class="sidebar-link sidebar-title navProfile" href="#"><i data-feather="user"></i><span class="">Profile</span></a>
                   </li>
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navDeposit" href="#"><i data-feather="dollar-sign"></i><span class="">Balance</span></a>
                   </li>
@@ -424,6 +432,98 @@
                     </div>
                   </div>  
 
+                  <div id="profileCard" class="col-md-6 mx-auto section" style="display: none;">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5>Profile</h5><span>Your profile is where backers can learn about you and become a backer.</span>
+                      </div>
+                      <div class="card-body">
+
+                        <div class="tab tab-profile">
+                            <div class="mb-3">
+                              <label for="profileName">Name:</label>
+                              <input class="form-control" id="profileName" type="text" placeholder="Your Name" data-bs-original-title="" title="">
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label" for="profileBio">Description:</label>
+                              <textarea class="form-control" id="profileBio" name="bio" placeholder="All about me..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profileAvatar">Profile Pic:</label>
+                                <input class="form-control profile-image" id="profileAvatar" type="file" data-bs-original-title="" title="">
+                                <p class="help-block">Square, 300x300px recommended.</p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profileCover">Cover Photo:</label>
+                                <input class="form-control profile-image" id="profileCover" type="file" data-bs-original-title="" title="">
+                                <p class="help-block">Large, 1595x470px recommended.</p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="profileToken"><span class="symbol">Coin</span> Icon:</label>
+                                <input class="form-control profile-image" id="profileToken" type="file" data-bs-original-title="" title="">
+                                <p class="help-block">Square, tiny.</p>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                  <span class="input-group-text btn btn-primary"><i class="fab fa-twitter"></i></span>
+                                  <input id="profileTwitter" name="twitter" class="form-control" placeholder="Twitter URL" type="text">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                  <span class="input-group-text btn btn-primary"><i class="fab fa-youtube"></i></span>
+                                  <input id="profileYouTube" name="youtube" class="form-control" placeholder="YouTube URL" type="text">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                  <span class="input-group-text btn btn-primary"><i class="fab fa-instagram"></i></span>
+                                  <input id="profileInstagram" name="insta" class="form-control" placeholder="Instagram URL" type="text">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                  <span class="input-group-text btn btn-primary"><i class="fab fa-discord"></i></span>
+                                  <input id="profileDiscord" name="discord" class="form-control" placeholder="Discord URL" type="text">
+                                </div>
+                            </div>
+                            <div class="text-center" style="margin-bottom: 20px;">
+                              <button class="btn btn-primary" id="saveProfile" data-form="card" type="button" title="">Save Profile</button>
+                            </div>
+                        </div>  
+                
+                      </div>
+                    </div>
+                  </div>  
+
+                  <div id="teamCard" class="col-md-6 mx-auto section" style="display: none;">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5>Add Team Member</h5><span></span>
+                      </div>
+                      <div class="card-body">
+
+                        <div class="tab tab-deposit">
+                            <div class="mb-3">
+                              <p class="lead">Add team member to manage membership</p>
+                              <label for="teamAddress">Address:</label>
+                              <input class="form-control" id="teamAddress" type="text" placeholder="0x..." data-bs-original-title="" title="">
+                            </div>
+                            <div class="mb-3">
+                              <label class="form-label" for="teamRole">Role</label>
+                              <select class="form-select" id="teamRole">
+                                <option value="MANAGER">Manager</option>
+                              </select>
+                            </div>
+                            <div class="text-center" style="margin-bottom: 20px;">
+                              <button class="btn btn-primary addTeam" id="addTeam" data-form="card" type="button" title="">Add Team Member</button>
+                            </div>
+                        </div>  
+                
+                      </div>
+                    </div>
+                  </div>  
+
               <div id="stats" class="col-xl-8 xl-100 dashboard-sec box-col-12 stats section">
                 <div class="card earning-card">
                   <div class="card-body p-0">
@@ -528,6 +628,78 @@
             </div>
           </div>
           <!-- Container-fluid Ends-->
+
+          <!-- Container-fluid starts-->
+          <div class="container-fluid section" id="public-profile">
+            <div class="user-profile">
+              <div class="row">
+                <!-- user profile first-style start-->
+                <div class="col-sm-12">
+                  <div class="card hovercard text-center">
+                    <div class="cardheader"></div>
+                    <div class="user-image">
+                      <div class="avatar"><img alt="" src="../assets/images/user/7.jpg"></div>
+                      <div class="icon-wrapper" style="display:none;"><i class="icofont icofont-pencil-alt-5"></i></div>
+                    </div>
+                    <div class="info">
+                      <div class="row">
+                        <div class="col-sm-6 col-lg-4 order-sm-1 order-xl-0">
+                          <div class="row">
+                            <div class="col-md-6">
+
+                            </div>
+                            <div class="col-md-6">
+
+                            </div>
+                          </div>
+                        </div>
+                        <div class="col-sm-12 col-lg-4 order-sm-0 order-xl-1">
+                          <div class="user-designation">
+                            <div class="title"><a id="nameLink" target="_blank" href="">Name</a></div>
+                            <div id="profileDescription" class="desc"></div>
+                          </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-4 order-sm-2 order-xl-2">
+                          <div class="row">
+                            <div class="col-md-6">
+
+                            </div>
+                            <div class="col-md-6">
+
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="social-media">
+                        <ul id="social-links" class="list-inline">
+                          <li class="list-inline-item"><a href="#" id="twitterLink"><i class="fab fa-twitter"></i></a></li>
+                          <li class="list-inline-item"><a href="#" id="youtubeLink"><i class="fab fa-youtube"></i></a></li>
+                          <li class="list-inline-item"><a href="#" id="instagramLink"><i class="fab fa-instagram"></i></a></li>
+                          <li class="list-inline-item"><a href="#" id="discordLink"><i class="fab fa-discord"></i></a></li>
+                        </ul>
+                      </div>
+                      <div class="follow">
+                        <div class="row">
+                          <div class="col-6 text-md-end border-right">
+                            <div class="follow-num counter backer-count">25869</div><span>Backers</span>
+                          </div>
+                          <div class="col-6 text-md-start">
+                            <div class="follow-num counter tier-count">3</div><span>Tiers</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- user profile first-style end-->
+              </div>
+            </div>
+          </div>
+          <!-- Container-fluid Ends-->
+
+
+
         </div>
         <!-- footer start-->
         <footer class="footer">
@@ -541,6 +713,27 @@
         </footer>
       </div>
     </div>
+
+    <button id="joined" style="display: none;" class="btn btn-primary" type="button" data-bs-toggle="modal" data-original-title="test" data-bs-target="#joinedModal">Simple</button>
+    <div class="modal fade" id="joinedModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">You have Joined!</h5>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Thank you for becoming a Backer</p>
+            <p><a class="add" href="#">Click here to add <span class="symbol">SYMBL</span> to Metamask</a></p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" type="button" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
     <!-- latest jquery-->
     <script src="assets/js/jquery-3.5.1.min.js"></script>
     <!-- Bootstrap js-->
@@ -569,6 +762,7 @@
     <!-- Theme js-->
     <script src="assets/js/script.js"></script>
 
+    
     <script src="https://cdn.jsdelivr.net/npm/@alch/alchemy-web3@latest/dist/alchemyWeb3.min.js"></script>
     <script src="https://cdn.ethers.io/lib/ethers-5.1.umd.min.js" type="text/javascript"></script>    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>

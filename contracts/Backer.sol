@@ -65,6 +65,7 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
    
     address[] backers;
     mapping(address => int96) flowRates;
+    string public profile;
 
     bytes32 public constant MANAGER = keccak256("MANAGER_ROLE");
    
@@ -199,6 +200,13 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
 
     function getAllTiers() public view returns (Tier[] memory) {
         return tiers;
+    }
+
+    function setProfile(string calldata _cid) external onlyRole(MANAGER) {
+        profile = _cid;
+    }
+    function getProfile() public view returns (string memory) {
+        return profile;
     }
 
     function cancelKeys() external {

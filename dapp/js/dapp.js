@@ -5,7 +5,7 @@ var BN = web3.utils.BN;
 
 const ipfsURL = "https://api.nft.storage/upload";
 var showWizard = false;
-const factoryAddress = "0x537Ca60A7DCDe1054BB30166AF04d3921C9F7B89";
+const factoryAddress = "0x45c593E793Ed7b10235515d61E497AAd404eD91E";
 var backeeAddress = "";
 var underlyingAddress = "";
 var underlyingSymbol = "";
@@ -20,6 +20,8 @@ var bToken;
 var roles = {
     MANAGER: web3.utils.keccak256("MANAGER_ROLE"),
 };
+var images = {};
+var profile = {};
 
 const prov = {"url": "https://"+rpcURL};
 var provider = new ethers.providers.JsonRpcProvider(prov);
@@ -90,6 +92,7 @@ if ( chain == "rinkeby" ) {
 const WETH = new web3.eth.Contract(tokenABI, addr.WETH); // need this?
 const resolver = new web3.eth.Contract(resolverABI, addr.Resolver);
 const cfa = new web3.eth.Contract(cfaABI, addr.cfa);
+const host = new web3.eth.Contract(hostABI, addr.SuperHost);
 
 var gas = web3.utils.toHex(new BN('2000000000')); // 2 Gwei;
 var dappChain = 4; // default to Rinkeby
@@ -103,6 +106,7 @@ var dailyFlow = 0;
 var daysLeft = 0;
 var tiers = [];
 var tierForFlow = {};
+var showProfile = false;
 
 function abbrAddress(address){
     if (!address) {
@@ -142,21 +146,38 @@ async function main() {
         location.reload();
     });
 
-    if (accounts.length > 0) {
+    if (ethereum.selectedAddress) {
         //$("li.profile-nav").find(".media-body span").text( abbrAddress() );
         //$(".card-buttons button.connect").hide().next().show();
         return afterConnection();
     } else {
-        $(".section").hide();
-        $(".chart_data_right.second").attr("style", "display: none !important");
-        showWizard = true;
-        $("#wizard").show();
+        if(window.location.hash) {
+            var hash = window.location.hash.substring(1);
+            console.log("hash", hash);
+            if ( hash.match(/^0x/) ) {
+                backeeAddress = hash;
+                showProfile = true;
+                $("#public-profile").show();
+            }
+        }
+        if (showProfile) {
+            return afterConnection();
+        } else {
+            $(".section").hide();
+            $(".chart_data_right.second").attr("style", "display: none !important");
+            showWizard = true;
+            $("#wizard").show();
+        }
+        
     }
     
 }
 
 function correctChain() {
   var correct = false;
+  if (accounts.length < 1) {
+      return true;
+  }
   if (dappChain == userChain) {
     correct = true;
   }
@@ -167,18 +188,59 @@ async function afterConnection() {
     return new Promise(async function(resolve, reject) {
         flowsByAddress = {};
         flows = []
-        $("li.profile-nav").find(".media-body span").text( abbrAddress() );
-        status("Connected as " + abbrAddress() );
-        const backees = await factory.methods.getBackeesForUser(ethereum.selectedAddress).call();
-        console.log("backees for user", backees);
+        if (ethereum.selectedAddress) {
+            $("li.profile-nav").find(".media-body span").text( abbrAddress() );
+        }
+        //status("Connected as " + abbrAddress() );
+        var backees = [];
+        if (ethereum.selectedAddress) {
+            backees = await factory.methods.getBackeesForUser(ethereum.selectedAddress).call();
+            console.log("backees for user", backees);
+        }
         if ( backees.length > 0 ) {
             backeeAddress = backees[backees.length - 1];
+            $(".sidebar-main").show();
+            $(".navStats").click();
+        } else {
+            if(window.location.hash) {
+                var hash = window.location.hash.substring(1);
+                console.log("hash", hash);
+                if ( hash.match(/^0x/) ) {
+                    backeeAddress = hash;
+                    showProfile = true;
+                    $("#public-profile").show();
+                }
+            }
+        }
+        if (backeeAddress) {
             console.log("backeeAddress", backeeAddress);
             backee = new web3.eth.Contract(backeeABI, backeeAddress);
-            superAddress = await backee.methods.acceptedToken().call({'from': ethereum.selectedAddress});
+            superAddress = await backee.methods.acceptedToken().call();
             console.log("superAddress", superAddress);
-            backerTokenAddress = await backee.methods.backerToken().call({'from': ethereum.selectedAddress});
+            backerTokenAddress = await backee.methods.backerToken().call();
             console.log("backerTokenAddress", backerTokenAddress);
+            var cid = await backee.methods.getProfile().call();
+            if (cid) {
+                profile.cid = cid;
+                profile.url = cidToHttp(cid);
+            }
+            if (profile.url) {
+                const response = await fetch(profile.url);
+                var result = await response.json();
+                console.log("result", result);
+                profile.data = result;
+                if ("image" in result) {
+                    images.profileAvatar = result.image;
+                }
+                if ("cover" in result) {
+                    images.profileCover = result.cover;
+                }
+                if ("token" in result) {
+                    images.profileToken = result.token;
+                }
+                renderProfile();
+            }
+            console.log("profile", profile);
             const sToken = new web3.eth.Contract(superABI, superAddress);
             backeeBal = await sToken.methods.balanceOf(backeeAddress).call();
             console.log("backeeBal", backeeBal);
@@ -205,7 +267,7 @@ async function afterConnection() {
             const displayBal = parseInt(backeeBal) / (10**underlyingDecimals);
             $("#backeeBal").text(displayBal.toFixed(2));
             $("#flowRate").text(dailyFlow.toFixed(2));
-            var t = await backee.methods.getAllTiers().call({'from': ethereum.selectedAddress});
+            var t = await backee.methods.getAllTiers().call();
             $("#tiers").html("");
             tiers = [];
             $.each(t, function(i, tier) {
@@ -214,7 +276,7 @@ async function afterConnection() {
                 tier.index = i;
                 tiers.push(tier);
                 tierForFlow[tier.flowRate] = tier.name;
-                $("#tiers").append( getTierHTML(tier) );
+                $("#tiers, .user-profile > .row").append( getTierHTML(tier) );
             });
             console.log("tiers", tiers);
             //$("#tiersSection").show();
@@ -280,6 +342,30 @@ async function afterConnection() {
         }
         resolve();    
     });
+}
+
+function renderProfile() {
+    if ("data" in profile) {
+        var p = profile.data;
+        $('.user-profile .hovercard .cardheader').css('background-image', 'url(' + p.cover + ')');
+        $('.user-image .avatar img').attr("src", p.image);
+        $('#nameLink').text(p.name);
+        $('#profileDescription').text(p.description);
+        if (p.twitter) {
+            $("#twitterLink").attr("href", p.twitter).parent().css("display", "inline-block");
+        }
+        if (p.youtube) {
+            $("#youtubeLink").attr("href", p.youtube).parent().css("display", "inline-block");
+        }
+        if (p.instagram) {
+            $("#instagramLink").attr("href", p.instagram).parent().css("display", "inline-block");
+        }
+        if (p.discord) {
+            $("#discordLink").attr("href", p.discord).parent().css("display", "inline-block");
+        }
+        $(".tier-count").text(tiers.length);
+        $(".backer-count").text(flows.length);
+    }
 }
 
 function tierToObject(t) {
@@ -429,7 +515,13 @@ async function addToken() {
     const tokenAddress = backerTokenAddress;
     const tokenSymbol = bTokenSymbol;
     const tokenDecimals = 18;
-    const tokenImage = 'https://backer.vip/assets/images/logo/stream.png'; // todo: custom image
+    var tokenImage = "https://backer.vip/assets/images/logo/stream.png";
+    if ("data" in profile) {
+        if ("token" in profile.data) {
+            tokenImage = profile.data.token;
+        }
+    }
+    console.log("tokenImage", tokenImage);
 
     try {
         // wasAdded is a boolean. Like any RPC method, an error may be thrown.
@@ -462,7 +554,7 @@ $( document ).ready(function() {
 
     main();
 
-    $(".add").click(function(){
+    $( "body" ).on( "click", ".add", async function() {
         addToken();
         return false;
     });
@@ -723,20 +815,6 @@ $( document ).ready(function() {
         }
         var name = $("#" + prefix + "TierName").val();
         var multiplier = parseInt( $("#" + prefix + "Multiplier").val() ) * 100;
-
-
-        const meta = {
-            "test": "1 2 3",
-            "image": "https://image.com/file.jpg",
-            "hello": "gm"
-        };
-        const blob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
-        const file = new File([ blob ], 'metadata.json');
-        const response = await fetch(ipfsURL, opts(file));
-        var result = await response.json();
-        console.log( result );
-        return false;
-
         var amount = $("#" + prefix + "Price").val();
         var seconds = $("#" + prefix + "FlowSeconds").val();
         var flowRate = parseInt( amount / seconds * ( 10**underlyingDecimals) );
@@ -811,10 +889,120 @@ $( document ).ready(function() {
         return false;
     });
 
+    $("#saveProfile").click(async function(){
+        var $button = $(this);
+        const meta = {
+            "name": $("#profileName").val(),
+            "description": $("#profileBio").val(),
+            "image": images.profileAvatar,
+            "cover": images.profileCover,
+            "token": images.profileToken,
+            "twitter": $("#profileTwitter").val(),
+            "youtube": $("#profileYouTube").val(),
+            "instagram": $("#profileInstagram").val(),
+            "discord": $("#profileDiscord").val()
+        };
+        const blob = new Blob([JSON.stringify(meta)], { type: 'application/json' });
+        const file = new File([ blob ], 'profile.json');
+        const response = await fetch(ipfsURL, opts(file));
+        var result = await response.json();
+        console.log( result );
+        if (result.ok) {
+            status("Saved profile to IPFS.");
+            console.log("Image CID", result.value.cid);
+            profile.cid = result.value.cid;
+            profile.url = "https://" + result.value.cid + ".ipfs.dweb.link";
+            console.log(profile);
+            $button.text("Please Wait").prop('disabled', true);
+            const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
+            const tx = {
+                'from': ethereum.selectedAddress,
+                'to': backeeAddress,
+                'gasPrice': gas,
+                'nonce': "" + nonce,
+                'data': backee.methods.setProfile(profile.cid).encodeABI()
+            };
+            const txHash = await ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [tx],
+            });
+            //console.log(txHash);
+            let transactionReceipt = null
+            while (transactionReceipt == null) { 
+                transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
+                await sleep(500)
+            }
+            status("Profile saved.")
+            $button.text("Save Profile").prop('disabled', false);
+        } else {
+            status("ERROR: saving profile to IPFS");
+        }
+        return false;
+    });
+
+    $( "#tiers, .user-profile" ).on( "click", ".join", async function() {
+        if ( accounts.length < 1 ) {
+            return connectWallet();
+        }
+        var flowRate = $(this).data("flowrate");
+        console.log("flowRate", flowRate);
+        var $button = $(this);
+        $button.text("Joining...").prop('disabled', true);
+        const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
+        const cfaPacked = cfa.methods.createFlow(superAddress, backeeAddress, flowRate, "0x").encodeABI();
+        const tx = {
+            'from': ethereum.selectedAddress,
+            'to': addr.SuperHost,
+            'gasPrice': gas,
+            'nonce': "" + nonce,
+            'data': host.methods.callAgreement(addr.cfa, cfaPacked, "0x").encodeABI()
+        };
+        const txHash = await ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [tx],
+        });
+        //console.log(txHash);
+        let transactionReceipt = null
+        while (transactionReceipt == null) { 
+            transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
+            await sleep(500)
+        }
+        status("Joined!")
+        $button.text("Joined").prop('disabled', false);
+        //$("body").append(joinedModal());
+        //$(".close, .modal-backdrop").click(function(){
+        //    $(".fade.show").remove();
+        //});
+        $("#joined").click();
+    });
+
     $(".chart-days li").click(function(){
         var days = parseInt( $(this).data("days") );
         $(this).addClass("active").siblings().removeClass("active");
         renderChart(chart, days);
+    });
+
+    $(".profile-image").change(async function(){
+        var id = $(this).attr("id");
+        var $button = $("#saveProfile");
+        var fileInput = document.querySelector("#" + id);
+        var files = fileInput.files;
+        if ( files.length < 1 ) {
+            return false;
+        }
+        var imageFile = files[0];
+        console.log(imageFile);
+        status("Uploading image to IPFS...");
+        $button.text("Please Wait").prop('disabled', true);
+        const response = await fetch(ipfsURL, opts(imageFile));
+        var result = await response.json();
+        console.log( result );
+        if (result.ok) {
+            status("Saved image to IPFS.");
+            console.log("Image CID", result.value.cid);
+            images[id] = "https://" + result.value.cid + ".ipfs.dweb.link";
+        }
+        $button.text("Save Profile").prop('disabled', false);
     });
 
     $(".navFlows").click(function(){
@@ -866,6 +1054,22 @@ $( document ).ready(function() {
         return false;
     });
 
+    $(".navProfile").click(function(){
+        if ("data" in profile) {
+            var p = profile.data;
+            $("#profileName").val(p.name);
+            $("#profileBio").val(p.description);
+            $("#profileTwitter").val(p.twitter);
+            $("#profileYouTube").val(p.youtube);
+            $("#profileInstagram").val(p.instagram);
+            $("#profileDiscord").val(p.discord);
+        }
+        $(".section").hide();
+        $(".chart_data_right.second").attr("style", "display: none !important");
+        $("#profileCard").show();
+        return false;
+    });
+
     $(".connect").click(function(){
         connectWallet();
         return false;
@@ -891,21 +1095,29 @@ function getTierHTML(ctx) {
     var t = ctx;
     t.multiplier = t.multiplier / 100;
     t.price = parseInt(t.flowRate) / (10**underlyingDecimals) * 60*60*24*365/12;
-    t.price = t.price.toFixed(2);
+    t.tokens = t.price * t.multiplier;
+    t.price = t.price.toFixed(0);
+    t.tokens = t.tokens.toFixed(1);
     var html = "";
     html = `
     <div class="col-sm-12 col-xl-4">
         <div class="card">
-            <div class="card-header">
-                <h5>${t.name}</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>Multipier:</strong> ${t.multiplier} (For each ${underlyingSymbol}, members receive ${t.multiplier} ${bTokenSymbol})</p>
-                <p><a href="https://app.unlock-protocol.com/members?locks=${t.lock}" target="_blank">Lock</a>
-            </div>
-            <div class="card-footer">
-                <h6 class="mb-0">${t.price} per Month</h6>
-            </div>
+
+            <div class="card-body pricingtable">
+                <div class="pricingtable-header">
+                          <h3 class="title">${t.name}</h3>
+                        </div>
+                <ul class="pricing-content">
+                    <li>Earn ${t.tokens} ${bTokenSymbol} per month</li>
+                    <li>Unlock Key to access <em>${t.name}</em> content <a href="https://app.unlock-protocol.com/members?locks=${t.lock}" target="_blank"><i class="fa fa-lock"></i></a></li>
+                </ul>
+    
+    <div class="price-value"><span class="currency">$</span><span class="amount">${t.price}</span><span class="duration">/mo</span></div>
+    
+    <button class="btn btn-primary btn-lg join" data-flowRate="${t.flowRate}" id="" type="button" title="">Join</button>
+    
+    </div>
+            
         </div>
     </div>
     `;
@@ -921,13 +1133,32 @@ function wrongNetworkModal(ctx){
             <div class="modal-content">
             <div class="modal-header"><div class="modal-title-custom modal-title h4">Switch Network</div></div>
                 <div class="modal-body" style="margin-left: 20px;">
-                    <p>Airlift is currently deployed on a fork of mainnet.</p>
+                    <p>Backer is currently deployed to Rinkeby testnet.</p>
                     <p><b>To get started, please switch your network by following the instructions below:</b></p>
                     <ol>
                         <li>Open Metamask</li>
                         <li>Click the network select dropdown</li>
-                        <li>Click on "Mumbai Test Network"</li>
+                        <li>Click on "Rinkeby Test Network"</li>
                     </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    return html;
+}
+
+function joinedModal(ctx){
+    var html = "";
+    html = `
+    <div class="fade modal-backdrop show"></div>
+    <div role="dialog" aria-modal="true" class="modal-theme modal-switch light modal" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+            <div class="modal-header"><div class="modal-title-custom modal-title h4">You haved Joined!</div></div>
+                <div class="modal-body" style="margin-left: 20px;">
+                    <p>Thank you for becoming a Backer..</p>
+                    <p><a class="add" href="#">Click here to add ${bTokenSymbol} to Metamask</a></p>
                 </div>
             </div>
         </div>
@@ -1213,6 +1444,12 @@ function renderKnobs(){
 function ipfsToHttp(ipfs) {
     var http = "";
     var cid = ipfs.replace("ipfs://", "");
+    http = "https://" + cid + ".ipfs.dweb.link";
+    return http;
+}
+
+function cidToHttp(cid) {
+    var http = "";
     http = "https://" + cid + ".ipfs.dweb.link";
     return http;
 }

@@ -760,6 +760,19 @@ const backeeABI = [
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "getProfile",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -948,6 +961,11 @@ const backeeABI = [
           "internalType": "address",
           "name": "owner",
           "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "parent",
+          "type": "address"
         }
       ],
       "name": "initialize",
@@ -1051,6 +1069,19 @@ const backeeABI = [
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "profile",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -1082,6 +1113,19 @@ const backeeABI = [
         }
       ],
       "name": "revokeRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_cid",
+          "type": "string"
+        }
+      ],
+      "name": "setProfile",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
