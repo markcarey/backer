@@ -6,8 +6,8 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const factoryJSON = require("../artifacts/contracts/Backer.sol/BackerFactory.json");
 const backeeJSON = require("../artifacts/contracts/Backer.sol/Backee.json");
 
-const factoryAddress = "0xdC3567497820F745b30bBbb981A9a70Eab816531";
-const backeeAddress = "0xCA068faE8a69E24eFeC4b7879C68603460CEC904";
+const factoryAddress = "0xc0D77B62cce5c5665016fEeA28557b66a34ab13a";
+const backeeAddress = "0xf2D57d4578f66491F11d84A9814f3856C9E053b4";
 
 const resolverAddress = "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3";
 
@@ -2749,7 +2749,9 @@ async function getSome(token, eoa) {
  //clone("The Backee", "XEE", '10000000000000000000000000000')
  //mintSome("0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD") // Kovan DAI
  //mintSome(addr.dai) 
- openStream(addr.fDAIx, "1693766937669") 
+ //openStream(addr.fDAIx, "1693766937669") 
+// openStream(addr.fDAIx, "9512937595129") 
+openStream(addr.fDAIx,  "38051750380517") 
  //openStream(addr.fDAIx, "9645061728395")
  //closeStream(addr.fDAIx, "1929012345679") 
  //wrap("0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD", "DAI")

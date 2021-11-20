@@ -89,7 +89,7 @@
                     <h6 class="f-18 mb-0">Notitications</h6>
                   </li>
                   <li>
-                    <p><i class="fa fa-circle-o me-3 font-primary"> </i><span class="daysLeft">90+</span> days until funding needed</p>
+                    <p><i class="fa fa-circle-o me-3 font-primary"> </i><span class="daysLeft">90+</span> days until all <span class="symbol">Backer</span> tokens distributed</p>
                   </li>
 
                 </ul>
@@ -146,9 +146,9 @@
                   </li>
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navTiers" href="#"><i data-feather="lock"></i><span class="">Tiers</span></a>
                   </li>
-                  <li class="sidebar-list"><a class="sidebar-link sidebar-title addFlow" href="#"><i data-feather="plus"></i><span class="">Add Tier</span></a>
-                  </li>
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navDeposit" href="#"><i data-feather="dollar-sign"></i><span class="">Balance</span></a>
+                  </li>
+                  <li class="sidebar-list"><a class="sidebar-link sidebar-title navToken" href="#"><i data-feather="disc"></i><span class="symbol">Token</span></a>
                   </li>
 
                 </ul>
@@ -222,17 +222,6 @@
                             </div>
                             <div class="text-center" style="margin-bottom: 20px;">
                               <button class="btn btn-primary" id="createBackee" type="button"  title="">Deploy Backer Contract</button>
-                            </div>
-                        </div>
-                        <div class="tab tab-deposit">
-                            <div class="mb-3">
-                              <p class="lead">Desposit tokens to vesting contract</p>
-                              <label for="amount">Amount:</label>
-                              <input class="form-control" id="wizardAmount" type="text" placeholder="0" data-bs-original-title="" title="">
-                            </div>
-                            <div class="text-center" style="margin-bottom: 20px;">
-                              <button class="btn btn-primary deposit" id="despositUnderlying" data-form="wizard" type="button" title="">Approve</button>
-                              <button class="btn btn-secondary" id="skipDeposit" type="button"  title="">Later</button>
                             </div>
                         </div>
                         <div class="tab tab-flow">
@@ -360,18 +349,46 @@
                 <div id="depositCard" class="col-md-6 mx-auto section" style="display: none;">
                     <div class="card">
                       <div class="card-header">
-                        <h5>Deposit Funds</h5><span></span>
+                        <h5>Withdraw Funds</h5><span></span>
                       </div>
                       <div class="card-body">
 
                         <div class="tab tab-deposit">
                             <div class="mb-3">
-                              <p class="lead">Desposit tokens to vesting contract</p>
+                              <p class="lead">Withdraw funds from Backer contract</p>
                               <label for="sectionAmount">Amount:</label>
                               <input class="form-control" id="sectionAmount" type="text" placeholder="0" data-bs-original-title="" title="">
                             </div>
                             <div class="text-center" style="margin-bottom: 20px;">
-                              <button class="btn btn-primary deposit" id="" data-form="card" type="button" title="">Approve</button>
+                              <button class="btn btn-primary withdraw" id="" data-form="card" type="button" title="">Withdraw</button>
+                            </div>
+                        </div>  
+                
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="tokenCard" class="col-md-6 mx-auto section" style="display: none;">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5>Token</h5><span>There are currently <span class="tokensRemaining">0</span> <a href="#" class="add"><span class="symbol">SYMBL</span></a> tokens remaining undistributed.</span>
+                      </div>
+                      <div class="card-body">
+
+                        <div class="tab tab-deposit">
+                            <div class="mb-3">
+                              <p class="lead">Send <span class="symbol">SYMBL</span> tokens from Backer contract:</p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="grantAmount">To:</label>
+                                <input class="form-control" id="grantAddress" type="text" placeholder="0x..." data-bs-original-title="" title="">
+                              </div>
+                            <div class="mb-3">
+                              <label for="grantAmount">Amount:</label>
+                              <input class="form-control" id="grantAmount" type="text" placeholder="0" data-bs-original-title="" title="">
+                            </div>
+                            <div class="text-center" style="margin-bottom: 20px;">
+                              <button class="btn btn-primary grant" id="" data-form="card" type="button" title="">Send</button>
                             </div>
                         </div>  
                 
@@ -388,7 +405,7 @@
 
                         <div class="tab tab-deposit">
                             <div class="mb-3">
-                              <p class="lead">Add team member to manage vesting flows</p>
+                              <p class="lead">Add team member to manage membership</p>
                               <label for="teamAddress">Address:</label>
                               <input class="form-control" id="teamAddress" type="text" placeholder="0x..." data-bs-original-title="" title="">
                             </div>
@@ -396,8 +413,6 @@
                               <label class="form-label" for="teamRole">Role</label>
                               <select class="form-select" id="teamRole">
                                 <option value="MANAGER">Manager</option>
-                                <option value="GRANTOR">Grantor</option>
-                                <option value="CLOSER">Closer</option>
                               </select>
                             </div>
                             <div class="text-center" style="margin-bottom: 20px;">
@@ -467,8 +482,8 @@
                             <div class="media p-0">
                               <div class="media-left"><i class="icofont icofont-calendar"></i></div>
                               <div class="media-body">
-                                <h6>Days of Funding</h6>
-                                <p class="daysLeft"></p>
+                                <h6>MRR</h6>
+                                <p class="mrr"></p>
                               </div>
                             </div>
                           </div>
@@ -484,7 +499,7 @@
                   <div class="card-body">
                     <div class="media align-items-center">
                       <div class="media-body right-chart-content">
-                        <h4 id="tokensVested">0</h4><span>Tokens Vested</span>
+                        <h4 id="tokensVested">0</h4><span><span class="symbol">Tokens</span> Distributed</span>
                       </div>
                       <div class="knob-block text-center">
                         <input id="tokensVestedKnob" class="knob1" data-width="10" data-height="70" data-thickness=".3" data-angleoffset="0" data-linecap="round" data-fgcolor="#7366ff" data-bgcolor="#eef5fb" value="60">
@@ -499,7 +514,7 @@
                   <div class="card-body">
                     <div class="media align-items-center">
                       <div class="media-body right-chart-content"> 
-                        <h4 id="tokensRemaining">0</h4><span>Tokens Unvested</span>
+                        <h4 class="tokensRemaining">0</h4><span><span class="symbol">Tokens</span> Remaining</span>
                       </div>
                       <div class="knob-block text-center">
                         <input id="tokensRemainingKnob" class="knob1" data-width="50" data-height="70" data-thickness=".3" data-fgcolor="#7366ff" data-linecap="round" data-angleoffset="0" value="40">
@@ -519,7 +534,7 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-md-12 footer-copyright text-center">
-                <p class="mb-0">Made duirng the DAO Global Hackathon</p>
+                <p class="mb-0">Made during the Web3 Jam Hackathon</p>
               </div>
             </div>
           </div>

@@ -111,7 +111,8 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
 
     function initialize(
         address _backerToken,
-        address owner
+        address owner,
+        address parent
     ) public virtual initializer
     {
         require(address(_backerToken) != address(0), "backerToken is zero address");
@@ -154,7 +155,7 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
 
         backerToken = ISuperToken(_backerToken);
         admin = owner;
-        factory = IBackerFactory(msg.sender);
+        factory = IBackerFactory(parent);
 
         //Access Control
         console.log("before any role granting");
@@ -269,6 +270,28 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
         } else {
             console.log("tier.lock is the zero address");
         }
+    }
+
+    function withdraw(uint256 amount) external onlyRole(MANAGER) {
+        // TODO: withdrawal fee to protocol / treasury?
+        uint256 balance = _acceptedToken.balanceOf(address(this));
+        if ( amount > balance) {
+            amount = balance;
+        }
+        _acceptedToken.transfer(msg.sender, amount);
+    }
+
+    function grant(address to, uint256 amount) external onlyRole(MANAGER) {
+        uint256 balance = backerToken.balanceOf(address(this));
+        if ( amount > balance) {
+            amount = balance;
+        }
+        backerToken.transfer(to, amount);
+    }
+
+    function grantRole(bytes32 role, address account) public override onlyRole(DEFAULT_ADMIN_ROLE) {
+        factory.addUser(account);
+        super.grantRole(role, account);
     }
 
     /// @dev Unlock Protocol callbacks:
@@ -489,7 +512,7 @@ contract BackerFactory {
         address backee = Clones.clone(backeeImplementation);
         console.log("backee", address(backee));
         // step 3: initialize superApp
-        Backee(backee).initialize(address(backerToken), msg.sender);
+        Backee(backee).initialize(address(backerToken), msg.sender, address(this));
         console.log("after backee init");
         // step 4: Set the proxy to use the Super Token logic managed by Superfluid Protocol Governance
         _superTokenFactory.initializeCustomSuperToken(address(backerToken));

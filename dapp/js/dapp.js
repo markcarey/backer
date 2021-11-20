@@ -4,7 +4,7 @@ var web3 = AlchemyWeb3.createAlchemyWeb3("wss://"+rpcURL);
 var BN = web3.utils.BN;
 
 var showWizard = false;
-const factoryAddress = "0xdC3567497820F745b30bBbb981A9a70Eab816531";
+const factoryAddress = "0x537Ca60A7DCDe1054BB30166AF04d3921C9F7B89";
 var backeeAddress = "";
 var underlyingAddress = "";
 var underlyingSymbol = "";
@@ -101,6 +101,7 @@ var bTokenBal = 0;
 var dailyFlow = 0;
 var daysLeft = 0;
 var tiers = [];
+var tierForFlow = {};
 
 function abbrAddress(address){
     if (!address) {
@@ -168,7 +169,7 @@ async function afterConnection() {
         $("li.profile-nav").find(".media-body span").text( abbrAddress() );
         status("Connected as " + abbrAddress() );
         const backees = await factory.methods.getBackeesForUser(ethereum.selectedAddress).call();
-        console.log("vestors for user", backees);
+        console.log("backees for user", backees);
         if ( backees.length > 0 ) {
             backeeAddress = backees[backees.length - 1];
             console.log("backeeAddress", backeeAddress);
@@ -183,6 +184,9 @@ async function afterConnection() {
             bToken = new web3.eth.Contract(superABI, backerTokenAddress);
             bTokenBal = await bToken.methods.balanceOf(backeeAddress).call();
             bTokenSymbol = await bToken.methods.symbol().call();
+            $(".symbol").text(bTokenSymbol);
+            tokensTotal = await bToken.methods.totalSupply().call();
+            tokensTotal = tokensTotal / (10**underlyingDecimals);
             console.log("bTokenBal", bTokenBal);
             underlyingAddress = await sToken.methods.getUnderlyingToken().call();
             console.log("underlyingAddress", underlyingAddress);
@@ -201,12 +205,14 @@ async function afterConnection() {
             $("#backeeBal").text(displayBal.toFixed(2));
             $("#flowRate").text(dailyFlow.toFixed(2));
             var t = await backee.methods.getAllTiers().call({'from': ethereum.selectedAddress});
-            console.log("tiers", tiers);
+            $("#tiers").html("");
+            tiers = [];
             $.each(t, function(i, tier) {
                 console.log(tier);
                 tier = tierToObject(tier);
                 tier.index = i;
                 tiers.push(tier);
+                tierForFlow[tier.flowRate] = tier.name;
                 $("#tiers").append( getTierHTML(tier) );
             });
             console.log("tiers", tiers);
@@ -223,49 +229,37 @@ async function afterConnection() {
             //    console.log(log);
             //});
 
+            var canceled = {};
             const ethersBackee = new ethers.Contract(backeeAddress, backeeABI, provider);
-            var filter = await ethersBackee.filters.BackerMemberJoined();
+            var filter = await ethersBackee.filters.BackerMemberCanceled();
             var events = await ethersBackee.queryFilter(filter, 9670700, 'latest');
+            $.each(events, async function(i, log){               
+                canceled[log.args.member] = log.args.date;
+            });
+            filter = await ethersBackee.filters.BackerMemberJoined();
+            events = await ethersBackee.queryFilter(filter, 9670700, 'latest');
             $.each(events, async function(i, log){
                 console.log(log.args);
                 var flow = flowToObject(log.args);
                 var bal = await bToken.methods.balanceOf(flow.address).call();
                 flow.bTokens = bal;
+                if ( flow.address in canceled ) {
+                    if ( canceled[flow.address] > flow.starttime ) {
+                        flow.endtime = canceled[flow.address];
+                    }
+                }
                 flows.push(flow);
                 if ( i == (events.length - 1) ) {
                     // last event
                     console.log("flows", flows);
                     renderTable(flows);
-                }
-            });
 
-            recipientAdresses = await vestor.methods.getAllAddresses().call({'from': ethereum.selectedAddress});
-            console.log("allAdresses", JSON.stringify(recipientAdresses));
-            $.each(recipientAdresses, async function( i, address ) {
-                var flowsForAddress = await vestor.methods.getFlowRecipient(address).call({'from': ethereum.selectedAddress});
-                console.log("flowsForAddress", JSON.stringify(flowsForAddress));
-                $.each(flowsForAddress, function(j, flow) {
-                    console.log("flow", flow);
-                    flow = flowToObject(flow);
-                    flow.flowIndex = j;
-                    console.log("flow.flowRate", flow.flowRate);
-                    flows.push(flow);
-                    if ( !(flow.recipient in flowsByAddress) ) {
-                        flowsByAddress[flow.recipient] = [];
-                    }
-                    flowsByAddress[flow.recipient].push(flow);
-                });
-                if ( i == (recipientAdresses.length - 1) ) {
-                    // last recipient
-                    tokensVested = tokensTotal - tokensRemaining;
-                    console.log("flowsByAddress", flowsByAddress);
-                    console.log("flows", flows);
-                    renderTable(flows);
                     calcTotals(flows);
                     chart = flowsByDate(flows);
-                    $(".daysLeft").text(daysLeft);
+                    var mrr = dailyFlow * 365 / 12;
+                    $(".mrr").text(mrr.toFixed(0));
                     $("#tokensVested").text(tokensVested.toFixed(0));
-                    $("#tokensRemaining").text(tokensRemaining.toFixed(0));
+                    $(".tokensRemaining").text(tokensRemaining.toFixed(0));
                     const vestPercent = tokensVested / tokensTotal * 100;
                     $("#tokensVestedKnob").val(vestPercent.toFixed(0));
                     const remainingPercent = 100 - vestPercent; 
@@ -274,6 +268,8 @@ async function afterConnection() {
                     renderChart(chart, 30);
                 }
             });
+
+            
             
         } else {
             $(".section").hide();
@@ -321,15 +317,8 @@ function flowToArray(f) {
 }
 
 function calcTotals(flows) {
-    var today = moment().unix();
-    $.each(flows, function(i, flow){
-        tokensTotal += flow.vestingDuration * ( flow.flowRate / (10**underlyingDecimals));
-        var elapsedDuration = today - flow.cliffEnd;
-        if (elapsedDuration > 0) {
-            tokensVested += elapsedDuration * ( flow.flowRate / (10**underlyingDecimals));
-        }
-    });
-    tokensRemaining = tokensTotal - tokensVested;
+    tokensRemaining = bTokenBal / (10**underlyingDecimals);
+    tokensVested = tokensTotal - tokensRemaining;
 }
 
 async function renderTable(flows) {
@@ -347,13 +336,15 @@ async function renderTable(flows) {
                 }
             },
             { 
-                title: "Flow Rate", 
+                title: "Tier", 
                 data: null,
                 render: function ( data, type, full, meta ) {
                     var flowRate = full.flowRate;
+                    var tier = tierForFlow[flowRate];
                     flowRate = parseInt(flowRate) / ( 10**underlyingDecimals);
                     flowRate = flowRate * 60*60*24*365/12;
-                    return flowRate.toFixed(2) + ` ${underlyingSymbol}x per month`;
+                    var rate = flowRate.toFixed(2) + ` ${underlyingSymbol}x per month`;
+                    return `<span title="${rate}">${tier}</span>`;
                 }
             },
             { 
@@ -362,6 +353,18 @@ async function renderTable(flows) {
                 render: function ( data, type, full, meta ) {
                     var cliff = full.starttime;
                     return moment.unix(cliff).format("YYYY-MM-DD");
+                }
+            },
+            { 
+                title: "End Date",
+                data: null,
+                render: function ( data, type, full, meta ) {
+                    var end = full.endtime;
+                    if (end) {
+                        return moment.unix(end).format("YYYY-MM-DD");
+                    } else {
+                        return "-";
+                    }
                 }
             },
             { 
@@ -421,11 +424,47 @@ async function updateStats() {
 
 }
 
+async function addToken() {
+    const tokenAddress = backerTokenAddress;
+    const tokenSymbol = bTokenSymbol;
+    const tokenDecimals = 18;
+    const tokenImage = 'https://backer.vip/assets/images/logo/stream.png'; // todo: custom image
+
+    try {
+        // wasAdded is a boolean. Like any RPC method, an error may be thrown.
+        const wasAdded = await ethereum.request({
+            method: 'wallet_watchAsset',
+            params: {
+                type: 'ERC20', // Initially only supports ERC20, but eventually more!
+                options: {
+                    address: tokenAddress, // The address that the token is at.
+                    symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
+                    decimals: tokenDecimals, // The number of decimals in the token
+                    image: tokenImage, // A string url of the token logo
+                },
+            },
+        });
+
+        if (wasAdded) {
+            console.log('Thanks for your interest!');
+        } else {
+            console.log('Your loss!');
+        }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 
 
 $( document ).ready(function() {
 
     main();
+
+    $(".add").click(function(){
+        addToken();
+        return false;
+    });
 
     $("#connect").click(function(){
         //wizard
@@ -567,7 +606,7 @@ $( document ).ready(function() {
         return false;
     });
 
-    $(".deposit").click(async function(){
+    $(".withdraw").click(async function(){
         var $tab = $(this).parents(".tab");
         var amt = 0;
         var wizard = false;
@@ -582,69 +621,85 @@ $( document ).ready(function() {
         }
         amt = $("#" + prefix + "Amount").val();
         $amount = $("#" + prefix + "Amount");
-        if ( approved >= amt ) {
-            $("button.deposit").text("Waiting...");
-            const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
-            const tx = {
-                'from': ethereum.selectedAddress,
-                'to': vestorAddress,
-                'gasPrice': gas,
-                'nonce': "" + nonce,
-                'data': vestor.methods.deposit(underlyingAddress, web3.utils.toHex(web3.utils.toWei(amt))).encodeABI()
-            };
-            const txHash = await ethereum.request({
-                method: 'eth_sendTransaction',
-                params: [tx],
-            });
-            //console.log(txHash);
-            let transactionReceipt = null
-            while (transactionReceipt == null) { 
-                transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
-                await sleep(500)
-            }
-            status(amt + " " + underlyingSymbol + " desposited and upgraded to " + underlyingSymbol + "x");
-            $amount.val(0);
-            approved = 0;
-            $button.text("Approve");
-            if (wizard) {
-                $tab.hide().next().show();
-                $("#setup-wizard span.active").removeClass("active").next().addClass("active");
-            } else {
-                $("#depositCard").hide();
-                $(".stats.section").show();
-            }
-            afterConnection()
-                .then(function(){
-                    renderChart(flows, 30);
-                });
-        } else {
-            // need approval
-            $("button.deposit").text("Approving...");
-            const token = new web3.eth.Contract(tokenABI, underlyingAddress);
-            const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
-            const tx = {
-                'from': ethereum.selectedAddress,
-                'to': underlyingAddress,
-                'gasPrice': gas,
-                'nonce': "" + nonce,
-                'data': token.methods.approve(vestorAddress, web3.utils.toHex(web3.utils.toWei(amt))).encodeABI()
-            };
-            const txHash = await ethereum.request({
-                method: 'eth_sendTransaction',
-                params: [tx],
-            });
-            //console.log(txHash);
-            let transactionReceipt = null
-            while (transactionReceipt == null) { 
-                transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
-                await sleep(500)
-            }
-            $button.text("Deposit");
-            approved = amt;
-            status("Approved");
+
+        $("button.withdraw").text("Waiting...");
+        const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
+        const tx = {
+            'from': ethereum.selectedAddress,
+            'to': backeeAddress,
+            'gasPrice': gas,
+            'nonce': "" + nonce,
+            'data': backee.methods.withdraw(web3.utils.toHex(web3.utils.toWei(amt))).encodeABI()
+        };
+        const txHash = await ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [tx],
+        });
+        //console.log(txHash);
+        let transactionReceipt = null
+        while (transactionReceipt == null) { 
+            transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
+            await sleep(500)
         }
+        status(amt + " " + underlyingSymbol + "x withdrawn");
+        $amount.val(0);
+        $button.text("Withdraw");
+        if (wizard) {
+            $tab.hide().next().show();
+            $("#setup-wizard span.active").removeClass("active").next().addClass("active");
+        } else {
+            $("#depositCard").hide();
+            $(".stats.section").show();
+        }
+        afterConnection()
+            .then(function(){
+                renderChart(flows, 30);
+            });
+       
         return false;
     });
+
+    $(".grant").click(async function(){
+        var $tab = $(this).parents(".tab");
+        var amt = 0;
+        var $button = $(this);
+        var $amount;
+        var prefix = "";
+        amt = $("#grantAmount").val();
+        $amount = $("#grantAmount");
+        var recipient = $("#grantAddress").val();
+
+        $("button.grant").text("Sending...");
+        const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
+        const tx = {
+            'from': ethereum.selectedAddress,
+            'to': backeeAddress,
+            'gasPrice': gas,
+            'nonce': "" + nonce,
+            'data': backee.methods.grant(recipient, web3.utils.toHex(web3.utils.toWei(amt))).encodeABI()
+        };
+        const txHash = await ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [tx],
+        });
+        //console.log(txHash);
+        let transactionReceipt = null
+        while (transactionReceipt == null) { 
+            transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
+            await sleep(500)
+        }
+        status(amt + " " + bTokenSymbol + " sent to " + recipient);
+        $amount.val(0);
+        $button.text("Send");
+        $("#tokenCard").hide();
+        $(".stats.section").show();
+        afterConnection()
+            .then(function(){
+                renderChart(flows, 30);
+            });
+        return false;
+    });
+
 
     $("#skipDeposit").click(function(){
         var $tab = $(this).parents(".tab");
@@ -710,61 +765,6 @@ $( document ).ready(function() {
         return false;
     });
 
-    $( "#all-flows" ).on( "click", ".launchFlow", async function() {
-        var $button = $(this);
-        $button.text("Launching...");
-        const recipient = $(this).data("address");
-        const flowIndex = $(this).data("flowIndex");
-        const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
-        const tx = {
-            'from': ethereum.selectedAddress,
-            'to': vestorAddress,
-            'gasPrice': gas,
-            'nonce': "" + nonce,
-            'data': vestor.methods.launchVesting([recipient]).encodeABI()
-        };
-        const txHash = await ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [tx],
-        });
-        console.log(txHash);
-        let transactionReceipt = null
-        while (transactionReceipt == null) { 
-            transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
-            await sleep(500)
-        }
-        status("Vesting flow(s) launched for " + recipient);
-        afterConnection();
-    });
-
-    $( "#all-flows" ).on( "click", ".stopFlow", async function() {
-        var $button = $(this);
-        $button.text("Stopping...");
-        const recipient = $(this).data("address");
-        const flowIndex = $(this).data("flowindex");
-        console.log("flowIndex", flowIndex);
-        const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
-        const tx = {
-            'from': ethereum.selectedAddress,
-            'to': vestorAddress,
-            'gasPrice': gas,
-            'nonce': "" + nonce,
-            'data': vestor.methods.closeStream(recipient, flowIndex).encodeABI()
-        };
-        const txHash = await ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [tx],
-        });
-        console.log(txHash);
-        let transactionReceipt = null
-        while (transactionReceipt == null) { 
-            transactionReceipt = await web3.eth.getTransactionReceipt(txHash);
-            await sleep(500)
-        }
-        status("Vesting flow stopped");
-        afterConnection();
-    });
-
     $("#addTeam").click(async function(){
         var $button = $(this);
         $button.text("Adding...");
@@ -775,10 +775,10 @@ $( document ).ready(function() {
         const nonce = await web3.eth.getTransactionCount(accounts[0], 'latest');
         const tx = {
             'from': ethereum.selectedAddress,
-            'to': vestorAddress,
+            'to': backeeAddress,
             'gasPrice': gas,
             'nonce': "" + nonce,
-            'data': vestor.methods.grantRole(role, teamMember).encodeABI()
+            'data': backee.methods.grantRole(role, teamMember).encodeABI()
         };
         const block = web3.eth.getBlockNumber();
         const txHash = await ethereum.request({
@@ -842,6 +842,13 @@ $( document ).ready(function() {
         $(".section").hide();
         $(".chart_data_right.second").attr("style", "display: none !important");
         $("#depositCard").show();
+        return false;
+    });
+
+    $(".navToken").click(function(){
+        $(".section").hide();
+        $(".chart_data_right.second").attr("style", "display: none !important");
+        $("#tokenCard").show();
         return false;
     });
 
@@ -955,9 +962,11 @@ function flowPerDay(flowRate) {
 
 function flowsByDate(flows) {
     const days = 90;
-    var bal = parseInt(vestorBal) / (10**underlyingDecimals);
+    //var bal = parseInt(backeeBal) / (10**underlyingDecimals);
+    var bal = 0;
     var perDay = 0;
-    var start = moment().startOf('day');
+    var today = moment().startOf('day');
+    var start = today.subtract(89, 'days');
     var balances = [];
     var flowRates = [];
     var dates = []
@@ -968,8 +977,11 @@ function flowsByDate(flows) {
         console.log("dayStart,dayEnd", dayStart,dayEnd);
         $.each(flows, function( i, flow ) {
             //check for new flows on this day
-            var flowStart = parseInt(flow.cliffEnd);
-            var flowEnd = flowStart + parseInt(flow.vestingDuration);
+            var flowStart = parseInt(flow.starttime);
+            var flowEnd = today;
+            if ( "endtime" in flow ) {
+                flowEnd = flow.endtime;
+            }
             console.log("flowStart,flowEnd", flowStart,flowEnd);
             if ( (flowStart >= dayStart) && (flowStart <= dayEnd) ) {
                 console.log("starting on this day");
@@ -984,7 +996,7 @@ function flowsByDate(flows) {
         if ( perDay < 0 ) {
             preDay = 0;
         }
-        bal -= perDay;
+        bal += perDay;
         if (bal < 0) {
             bal = 0;
             if (daysLeft == 0) {
@@ -1012,10 +1024,10 @@ function renderChart(chart, days) {
     var options = {
         series: [{
             name: 'Balance',
-            data: chart.balances.slice(0,days)
+            data: chart.balances.slice(90-days,90)
         }, {
             name: 'flow rate',
-            data: chart.flowRates.slice(0,days)
+            data: chart.flowRates.slice(90-days,90)
         }],
         chart: {
             height: 240,
@@ -1036,7 +1048,7 @@ function renderChart(chart, days) {
             offsetX: 0,
             offsetY: 0,
             show: false,
-            categories: chart.dates.slice(0,days),
+            categories: chart.dates.slice(90-days,90),
             labels: {
                 low: 0,
                 offsetX: 0,
