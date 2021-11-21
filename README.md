@@ -1,8 +1,8 @@
-## Backer
+# Backer
 
 Backer is a web3 version of Patreon. Offer memberships and get paid via real-time streams of crypto. In return, your Backers receive a real-time stream of your very own ERC20 token. Backers also get an NFT key from Unlock Protocol that can be used to grant access to members-only benefits. Setup takes minutes. Get paid and build a community of Backers.
 
-# Features
+## Features
 - Create your own ERC20 token with pre-minted supply
 - Choose the token you want to be paid in (ie. DAI)
 - Create multiple memberships tiers. Backers choose a monthly rate but pay through real-time money streams using the Superfluid Protocol. Get paid every second.
@@ -11,7 +11,7 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 - Create a profile page with that displays information, images, links, and your tiers. Send prospective Backers to your profile page so thay can back you.
 - Admin dashboard includes stats, graphs, member list and forms for adding tiers, editing profile, adding team members, withdrawing funds, and granting tokens.
 
-# How it was built
+## How it was built
 - A factory contract deploys an implementation of Backer contract logic.
 - Via the dapp UI, a creator can deploy their own clone/proxy Backer contract.
 - The backer contract enables the creation of membership tiers with distinct pricing and rewards.
@@ -31,14 +31,14 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 - The `TOKEN` screen enables the creator to grant (send) some of their ERC20 tokens to any address. Currently these are transferred immediately, and not streamed.
 - The `NFTs` screen (in future) will enable the easy creation of NFT collections and minting of ERC721 NFTs.
 
-# Next steps
+## Next steps
 - Development of NFTs feature
 - UI for browsing creators using Backer (the Backer Factory contract keeps a registry, but no UI yet)
 - Polygon launch
 
-# Try it
+## Try it
 - https://backer.vip
 
-# Connect
+## Connect
 - https://discord.gg/zMW8rkQtsN
 - https://twitter.com/mthacks
