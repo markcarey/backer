@@ -30,6 +30,7 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 - The `Balance` screen enables the creator to withdraw accumulated funds from the Backer contract. A withdrawal fee to the Backer Protocol is being considered here, but not currently implemented.
 - The `TOKEN` screen enables the creator to grant (send) some of their ERC20 tokens to any address. Currently these are transferred immediately, not streamed.
 - The `NFTs` screen (in future) will enable the easy creation of NFT collections and minting of ERC721 NFTs.
+- The dapp is hosted on IPFS, deployed using a Github Action via Pinata. The IPFS cid is then served via Cloudflare's IPFS gateway using DNSLink, making the dapp accessible via https://backer.vip
 
 ## Next steps
 - Development of NFTs feature
