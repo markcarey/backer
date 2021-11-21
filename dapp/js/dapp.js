@@ -973,6 +973,7 @@ $( document ).ready(function() {
         //    $(".fade.show").remove();
         //});
         $("#joined").click();
+        return false;
     });
 
     $(".chart-days li").click(function(){
