@@ -209,6 +209,10 @@ contract Backee is IERC777RecipientUpgradeable, SuperAppBase, Initializable, Acc
         return profile;
     }
 
+    /// @dev Gelato resolver for cancelKeys()
+    function cancelsPending() external view returns(bool canExec, bytes memory execPayload) {
+        canExec = toCancel.length > 0;
+    }
     function cancelKeys() external {
         _cancelKeys();
     }

@@ -621,6 +621,24 @@ const backeeABI = [
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "cancelsPending",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "canExec",
+          "type": "bool"
+        },
+        {
+          "internalType": "bytes",
+          "name": "execPayload",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "int96",

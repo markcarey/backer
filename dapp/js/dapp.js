@@ -5,7 +5,7 @@ var BN = web3.utils.BN;
 
 const ipfsURL = "https://api.nft.storage/upload";
 var showWizard = false;
-const factoryAddress = "0x45c593E793Ed7b10235515d61E497AAd404eD91E";
+const factoryAddress = "0x1B014ae2f8c56878Be86d9E6257Bd8532b942799";
 var backeeAddress = "";
 var underlyingAddress = "";
 var underlyingSymbol = "";
