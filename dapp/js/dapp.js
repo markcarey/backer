@@ -200,7 +200,9 @@ async function afterConnection() {
         if ( backees.length > 0 ) {
             backeeAddress = backees[backees.length - 1];
             $(".sidebar-main").show();
-            $(".navStats").click();
+            if ( $(".section:visible").length < 1 ) {
+                $(".navStats").click();
+            }
         } else {
             if(window.location.hash) {
                 var hash = window.location.hash.substring(1);
@@ -261,6 +263,17 @@ async function afterConnection() {
             dailyFlow = await cfa.methods.getNetFlow(superAddress, backeeAddress).call();
             dailyFlow = parseInt(dailyFlow) / (10**underlyingDecimals) * (60*60*24);
             console.log("dailyFlow", dailyFlow);
+            tokensRemaining = bTokenBal / (10**underlyingDecimals);
+            tokensVested = tokensTotal - tokensRemaining;
+            var mrr = dailyFlow * 365 / 12;
+            $(".mrr").text(mrr.toFixed(0));
+            $("#tokensVested").text(tokensVested.toFixed(0));
+            $(".tokensRemaining").text(tokensRemaining.toFixed(0));
+            const vestPercent = tokensVested / tokensTotal * 100;
+            $("#tokensVestedKnob").val(vestPercent.toFixed(0));
+            const remainingPercent = 100 - vestPercent; 
+            $("#tokensRemainingKnob").val(remainingPercent.toFixed(0));
+            renderKnobs();
             if ( symbol ) {
                 underlyingSymbol = symbol;
             }
@@ -316,18 +329,9 @@ async function afterConnection() {
                     // last event
                     console.log("flows", flows);
                     renderTable(flows);
-
-                    calcTotals(flows);
+                    $(".tier-count").text(tiers.length);
+                    $(".backer-count").text(flows.length);
                     chart = flowsByDate(flows);
-                    var mrr = dailyFlow * 365 / 12;
-                    $(".mrr").text(mrr.toFixed(0));
-                    $("#tokensVested").text(tokensVested.toFixed(0));
-                    $(".tokensRemaining").text(tokensRemaining.toFixed(0));
-                    const vestPercent = tokensVested / tokensTotal * 100;
-                    $("#tokensVestedKnob").val(vestPercent.toFixed(0));
-                    const remainingPercent = 100 - vestPercent; 
-                    $("#tokensRemainingKnob").val(remainingPercent.toFixed(0));
-                    renderKnobs();
                     renderChart(chart, 30);
                 }
             });
@@ -401,11 +405,6 @@ function flowToArray(f) {
         f.state
     ];
     return flow;
-}
-
-function calcTotals(flows) {
-    tokensRemaining = bTokenBal / (10**underlyingDecimals);
-    tokensVested = tokensTotal - tokensRemaining;
 }
 
 async function renderTable(flows) {
@@ -1063,11 +1062,18 @@ $( document ).ready(function() {
             $("#profileYouTube").val(p.youtube);
             $("#profileInstagram").val(p.instagram);
             $("#profileDiscord").val(p.discord);
+            $("#previewProfile").show();
         }
         $(".section").hide();
         $(".chart_data_right.second").attr("style", "display: none !important");
         $("#profileCard").show();
         return false;
+    });
+
+    $("#previewProfile").click(function(){
+        renderProfile();
+        $("#profileCard").hide();
+        $("#public-profile").show();
     });
 
     $(".connect").click(function(){
@@ -1266,13 +1272,22 @@ function flowsByDate(flows) {
 }
 
 function renderChart(chart, days) {
+    console.log(chart);
+    var b = [];
+    var f = [];
+    var d = [];
+    if ( ("balances" in chart) && (chart.balances.length > 0) ) {
+        b = chart.balances.slice(90-days,90);
+        f = chart.flowRates.slice(90-days,90);
+        d = chart.dates.slice(90-days,90);
+    }
     var options = {
         series: [{
             name: 'Balance',
-            data: chart.balances.slice(90-days,90)
+            data: b
         }, {
             name: 'flow rate',
-            data: chart.flowRates.slice(90-days,90)
+            data: f
         }],
         chart: {
             height: 240,
@@ -1293,7 +1308,7 @@ function renderChart(chart, days) {
             offsetX: 0,
             offsetY: 0,
             show: false,
-            categories: chart.dates.slice(90-days,90),
+            categories: d,
             labels: {
                 low: 0,
                 offsetX: 0,
