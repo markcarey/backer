@@ -5,7 +5,7 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 ## Features
 - Create your own ERC20 token with pre-minted supply
 - Choose the token you want to be paid in (ie. DAI)
-- Create multiple memberships tiers. Backers choose a monthly rate but pay through real-time money streams using the Superfluid Protocol. Get paid every second.
+- Create multiple memberships tiers. Backers choose a tier with a monthly rate but pay through real-time money streams using the Superfluid Protocol. Get paid every second.
 - Active Backers get your token streamed to them in real-time. Each tier defines a multiplier that determines how many tokens they receive. For example, a stream of 5 DAI per month for a tier with a multiplier of 2 will receive 10 tokens per month, streamed in real-time.
 - When Backers cancel their stream, the token stream automatically stops immediately, and the Unlcok key is revoked
 - Create a profile page with that displays information, images, links, and your tiers. Send prospective Backers to your profile page so thay can back you.
@@ -23,12 +23,12 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 - When a Backer cancels -- when they stop streaming towards the contract -- the Backer contract reacts to this and immediately stops the stream of ERC20 tokens to the (former) Backer.
 - Also when a Backer cancels, a task is added a job queue stored in the backer contract, to cancel the Lock key owned by the backer.
 - A task created on the Gelato Network checks the job queue and exceutes a function to run the task to cancel the keys. As part of this task, the Backer contact calls the Lock contract to cancel the key, which is done by effectively setting the expiration date of the key, to the current time, immediately expiring it.
-- The `Dashboard` screen of the dapp shows a graph of money streams and statistic for balance, current daily flowrate, Monthly Recurring Revenue (MRR), the total for ERC20 tokens that have been distributed and the total remaining supply
-- The `Members` screen shows a list of Backers with start and end dates, tier, revenue to date, and the total of Backer ERC20 token in their wallet (keeping in mind that Backers arte free to sell or send their tokens after receiving them). The list can be easily sorted and filtered: easily identify the HODLers and OGs.
-- The `Tiers` screen list the current tiers and enables the creator to add tiers, choosing a name, price, and multiplier for each.
-- The `Profile` screen provides a form for saving profile date: name, description, social links, and images for avatar, cover images, and image for the creators token. This screen also enables a preview of the public profile screen, which will be shown to potential Backers, enabling them to back the creator by joining a tier. Images and text profile data are stored on the IPFS / Filecoin network via the nft.storage service -- only the IPFS cid hash is stored in the Backer contract for later retrieval.
-- The `Balance` screen enables the creator to withdrawn accumulated funds from the Backer contract. A withdrawal fee to the Backer Protocol is being considered here, but not currently implemented.
-- The `TOKEN` screen enables the creator to grant (send) some of their ERC20 tokens to any address. Currently these are transferred immediately, and not streamed.
+- The `Dashboard` screen of the dapp shows a graph of money streams and statistics for balance, current daily flowrate, Monthly Recurring Revenue (MRR), the total of ERC20 tokens that have been distributed and the total remaining supply
+- The `Members` screen shows a list of Backers with start and end dates, tier, revenue to date, and the total of Backer ERC20 tokens in their wallet (keeping in mind that Backers are free to sell or send their tokens after receiving them). The list can be easily sorted and filtered: easily identify the HODLers and OGs.
+- The `Tiers` screen lists the current tiers and enables the creator to add tiers, choosing a name, price, and multiplier for each.
+- The `Profile` screen provides a form for saving profile date: name, description, social links, and images for avatar, cover images, and an image for the creator's token. This screen also enables a preview of the public profile screen, which will be shown to potential Backers, enabling them to back the creator by joining a tier. Images and text-based profile data are stored on the IPFS / Filecoin network via the nft.storage service -- only the IPFS cid hash is stored in the Backer contract for later retrieval.
+- The `Balance` screen enables the creator to withdraw accumulated funds from the Backer contract. A withdrawal fee to the Backer Protocol is being considered here, but not currently implemented.
+- The `TOKEN` screen enables the creator to grant (send) some of their ERC20 tokens to any address. Currently these are transferred immediately, not streamed.
 - The `NFTs` screen (in future) will enable the easy creation of NFT collections and minting of ERC721 NFTs.
 
 ## Next steps
