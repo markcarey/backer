@@ -7,7 +7,7 @@ const factoryJSON = require("../artifacts/contracts/Backer.sol/BackerFactory.jso
 const backeeJSON = require("../artifacts/contracts/Backer.sol/Backee.json");
 
 const factoryAddress = "0xc0D77B62cce5c5665016fEeA28557b66a34ab13a";
-const backeeAddress = "0xf2D57d4578f66491F11d84A9814f3856C9E053b4";
+const backeeAddress = "0x0C6465F50B490AbE8b1D616B0130ad57b573fdf3";
 
 const resolverAddress = "0x8C54C83FbDe3C59e59dd6E324531FB93d4F504d3";
 
@@ -2693,6 +2693,19 @@ async function cancelKeys() {
   await contract.cancelKeys();
 }
 
+
+async function cancelsPending() {
+  let contract = new ethers.Contract(
+    backeeAddress,
+    backeeJSON.abi,
+    signer
+  );
+  var can;
+  var data;
+  data = await contract.cancelsPending();
+  console.log(can, data);
+}
+
 async function lockData(lockAddress) {
   let lock = new ethers.Contract(
     lockAddress,
@@ -2751,7 +2764,7 @@ async function getSome(token, eoa) {
  //mintSome(addr.dai) 
  //openStream(addr.fDAIx, "1693766937669") 
 // openStream(addr.fDAIx, "9512937595129") 
-openStream(addr.fDAIx,  "38051750380517") 
+//openStream(addr.fDAIx,  "38051750380517") 
  //openStream(addr.fDAIx, "9645061728395")
  //closeStream(addr.fDAIx, "1929012345679") 
  //wrap("0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD", "DAI")
@@ -2764,6 +2777,7 @@ openStream(addr.fDAIx,  "38051750380517")
  //lockData("0xa7c9f8AaA346CdD9d9ccDD13a0c6E363064e0AE3")
  //backerToken()
  //cancelKeys()
+ cancelsPending()
 
  //clone("The Backee", "EEE", '10000000000000000000000000000')
    .then(() => process.exit(0))

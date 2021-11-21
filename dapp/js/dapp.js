@@ -1053,6 +1053,13 @@ $( document ).ready(function() {
         return false;
     });
 
+    $(".navNFTs").click(function(){
+        $(".section").hide();
+        $(".chart_data_right.second").attr("style", "display: none !important");
+        $("#nftCard").show();
+        return false;
+    });
+
     $(".navProfile").click(function(){
         if ("data" in profile) {
             var p = profile.data;

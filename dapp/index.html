@@ -106,7 +106,7 @@
               <li class="profile-nav onhover-dropdown p-0 me-0">
                 <div class="media profile-media"><img class="b-r-10" src="assets/images/dashboard/profile.jpg" alt="">
                   <div class="media-body connect"><span>Connect</span>
-                    <p class="mb-0 font-roboto">Admin <i class="middle fa fa-angle-down"></i></p>
+                    <p class="mb-0 font-roboto">Rinkeby <i class="middle fa fa-angle-down"></i></p>
                   </div>
                 </div>
                 <ul class="profile-dropdown onhover-show-div">
@@ -157,6 +157,8 @@
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navDeposit" href="#"><i data-feather="dollar-sign"></i><span class="">Balance</span></a>
                   </li>
                   <li class="sidebar-list"><a class="sidebar-link sidebar-title navToken" href="#"><i data-feather="disc"></i><span class="symbol">Token</span></a>
+                  </li>
+                  <li class="sidebar-list"><a class="sidebar-link sidebar-title navNFTs" href="#"><i data-feather="image"></i>NFTs</a>
                   </li>
 
                 </ul>
@@ -433,11 +435,26 @@
                     </div>
                   </div>  
 
+                  <div id="nftCard" class="col-md-6 mx-auto section" style="display: none;">
+                    <div class="card">
+                      <div class="card-header">
+                        <h5>NFTs</h5><span></span>
+                      </div>
+                      <div class="card-body">
+                        <div class="tab tab-nfts">
+                            <div class="mb-3">
+                              <p class="lead">Coming soon: easily deploy NFT collections for sale, auction, or community rewards.</p>
+                            </div>
+                        </div>  
+                      </div>
+                    </div>
+                  </div>
+
                   <div id="profileCard" class="col-md-6 mx-auto section" style="display: none;">
                     <div class="card">
                       <div class="card-header">
                         <h5>Profile</h5><span>Your profile is where backers can learn about you and become a backer.</span>
-                        <button style="display:none;" class="btn btn-primary" id="previewProfile" data-form="card" type="button" title="">Preview Profile</button>
+                        <button style="display:none;" class="btn btn-primary btn-sm" id="previewProfile" data-form="card" type="button" title="">Preview Profile</button>
                       </div>
                       <div class="card-body">
 
