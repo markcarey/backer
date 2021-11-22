@@ -190,6 +190,7 @@ async function afterConnection() {
         flows = []
         if (ethereum.selectedAddress) {
             $("li.profile-nav").find(".media-body span").text( abbrAddress() );
+            $(".profile-media img").attr("src", "https://web3-images-api.kibalabs.com/v1/accounts/" + ethereum.selectedAddress + "/image").css("width", "37px");
         }
         //status("Connected as " + abbrAddress() );
         var backees = [];
@@ -418,7 +419,8 @@ async function renderTable(flows) {
                 render: function ( data, type, full, meta ) {
                     var addr = full.address;
                     var short = abbrAddress(addr);
-                    return `<span title="${addr}">${short}</span>`;
+                    var img = "https://web3-images-api.kibalabs.com/v1/accounts/" + addr + "/image";
+                    return `<img src="${img}" style="width:21px;border-radius:4px;" /> <span title="${addr}">${short}</span>`;
                 }
             },
             { 
