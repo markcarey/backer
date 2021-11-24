@@ -38,7 +38,7 @@ Backer is a web3 version of Patreon. Offer memberships and get paid via real-tim
 - Polygon launch
 
 ## Try it
-- https://backer.vip
+- https://backer.vip (connect to RINKEBY testnet)
 
 ## Connect
 - https://discord.gg/zMW8rkQtsN
