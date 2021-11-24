@@ -14,6 +14,7 @@ var superAddress = "";
 var backerTokenAddress = "";
 var bTokenSymbol = "";
 var approved = 0;
+var flowTimer;
 const factory = new web3.eth.Contract(factoryABI, factoryAddress);
 var backee;
 var bToken;
@@ -103,6 +104,7 @@ var wethBal = 0;
 var backeeBal = 0;
 var bTokenBal = 0;
 var dailyFlow = 0;
+var dailyOutFlow = 0;
 var daysLeft = 0;
 var tiers = [];
 var tierForFlow = {};
@@ -264,12 +266,15 @@ async function afterConnection() {
             dailyFlow = await cfa.methods.getNetFlow(superAddress, backeeAddress).call();
             dailyFlow = parseInt(dailyFlow) / (10**underlyingDecimals) * (60*60*24);
             console.log("dailyFlow", dailyFlow);
+            dailyOutFlow = await cfa.methods.getNetFlow(backerTokenAddress, backeeAddress).call();
+            dailyOutFlow = parseInt(dailyOutFlow) / (10**underlyingDecimals) * (60*60*24);
+            console.log("dailyOutFlow", dailyOutFlow);
             tokensRemaining = bTokenBal / (10**underlyingDecimals);
             tokensVested = tokensTotal - tokensRemaining;
             var mrr = dailyFlow * 365 / 12;
             $(".mrr").text(mrr.toFixed(0));
-            $("#tokensVested").text(tokensVested.toFixed(0));
-            $(".tokensRemaining").text(tokensRemaining.toFixed(0));
+            $("#tokensVested").text(tokensVested.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+            $(".tokensRemaining").text(tokensRemaining.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
             const vestPercent = tokensVested / tokensTotal * 100;
             $("#tokensVestedKnob").val(vestPercent.toFixed(0));
             const remainingPercent = 100 - vestPercent; 
@@ -278,9 +283,9 @@ async function afterConnection() {
             if ( symbol ) {
                 underlyingSymbol = symbol;
             }
-            const displayBal = parseInt(backeeBal) / (10**underlyingDecimals);
-            $("#backeeBal").text(displayBal.toFixed(2));
-            $("#flowRate").text(dailyFlow.toFixed(2));
+            var displayBal = parseInt(backeeBal) / (10**underlyingDecimals);
+            $("#backeeBal").text(displayBal.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+            $("#flowRate").text(dailyFlow.toFixed(4));
             var t = await backee.methods.getAllTiers().call();
             $("#tiers").html("");
             tiers = [];
@@ -289,7 +294,7 @@ async function afterConnection() {
                 tier = tierToObject(tier);
                 tier.index = i;
                 tiers.push(tier);
-                tierForFlow[tier.flowRate] = tier.name;
+                tierForFlow[tier.flowRate] = tier;
                 $("#tiers, .user-profile > .row").append( getTierHTML(tier) );
             });
             console.log("tiers", tiers);
@@ -334,6 +339,14 @@ async function afterConnection() {
                     $(".backer-count").text(flows.length);
                     chart = flowsByDate(flows);
                     renderChart(chart, 30);
+                    flowTimer = setInterval(() => {
+                        displayBal += dailyFlow / (60*60*24);
+                        $("#backeeBal").text(displayBal.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+                        tokensRemaining += dailyOutFlow / (60*60*24);
+                        tokensVested = tokensTotal - tokensRemaining;
+                        $("#tokensVested").text(tokensVested.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+                        $(".tokensRemaining").text(tokensRemaining.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+                    }, 1000);
                 }
             });
 
@@ -429,10 +442,11 @@ async function renderTable(flows) {
                 render: function ( data, type, full, meta ) {
                     var flowRate = full.flowRate;
                     var tier = tierForFlow[flowRate];
+                    var tierName = tier.name;
                     flowRate = parseInt(flowRate) / ( 10**underlyingDecimals);
                     flowRate = flowRate * 60*60*24*365/12;
                     var rate = flowRate.toFixed(2) + ` ${underlyingSymbol}x per month`;
-                    return `<span title="${rate}">${tier}</span>`;
+                    return `<span title="${rate}">${tierName}</span>`;
                 }
             },
             { 
@@ -464,7 +478,13 @@ async function renderTable(flows) {
                     flowRate = parseInt(flowRate) / ( 10**underlyingDecimals);
                     var duration = moment().unix() - cliff;
                     var revenue = duration * flowRate;
-                    return revenue.toFixed(2);
+                    var revenueDisplay = revenue.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4});
+                    var id = "rev-" + full.address;
+                    var timer = setInterval(async () => {
+                        revenue += flowRate;
+                        $("#" + id).text(revenue.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+                    }, 1000);
+                    return `<span id="${id}">${revenueDisplay}</span>`;
                 }
             },
             { 
@@ -475,7 +495,17 @@ async function renderTable(flows) {
                     if (full.bTokens) {
                         balance = full.bTokens / ( 10**underlyingDecimals);
                     }
-                    return balance.toFixed(4);
+                    var flowRate = full.flowRate;
+                    var tier = tierForFlow[flowRate];
+                    var multiplier = tier.multiplier;
+                    flowRate = parseInt(flowRate) / ( 10**underlyingDecimals);
+                    var balanceDisplay = balance.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4});
+                    var id = "tok-" + full.address;
+                    var timer = setInterval(async () => {
+                        balance += flowRate * multiplier;
+                        $("#" + id).text(balance.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 4}));
+                    }, 1000);
+                    return `<span id="${id}">${balanceDisplay}</span>`;
                 }
             }
         ]
@@ -547,6 +577,7 @@ async function addToken() {
     } catch (error) {
         console.log(error);
     }
+    return false;
 }
 
 
@@ -1235,7 +1266,7 @@ function flowsByDate(flows) {
         var dayStart = start.unix();
         var end = moment(start).endOf('day');
         var dayEnd = end.unix();
-        console.log("dayStart,dayEnd", dayStart,dayEnd);
+        //console.log("dayStart,dayEnd", dayStart,dayEnd);
         $.each(flows, function( i, flow ) {
             //check for new flows on this day
             var flowStart = parseInt(flow.starttime);
@@ -1243,14 +1274,14 @@ function flowsByDate(flows) {
             if ( "endtime" in flow ) {
                 flowEnd = flow.endtime;
             }
-            console.log("flowStart,flowEnd", flowStart,flowEnd);
+            //console.log("flowStart,flowEnd", flowStart,flowEnd);
             if ( (flowStart >= dayStart) && (flowStart <= dayEnd) ) {
-                console.log("starting on this day");
+                //console.log("starting on this day");
                 perDay += flowPerDay(flow.flowRate);
             }
             //check for ending flows
             if ( (flowEnd >= dayStart) && (flowEnd <= dayEnd) ) {
-                console.log("ending on this day");
+                //console.log("ending on this day");
                 perDay -= flowPerDay(flow.flowRate);
             }
         });
